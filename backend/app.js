@@ -8,6 +8,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-app.use('/api', apiRoutes);
+app.use('/', apiRoutes);
 
 module.exports = app;

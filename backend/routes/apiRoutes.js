@@ -1,9 +1,9 @@
 const express = require('express');
-
 const router = express.Router();
+const userController = require('../controllers/User')
 
-router.get('/', (req, res) => {
-    res.send('API is running...');
-  });
+router.post('/signup',userController.createUser)
+
+
 
 module.exports = router;
