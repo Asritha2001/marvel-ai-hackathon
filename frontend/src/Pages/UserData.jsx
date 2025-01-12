@@ -7,7 +7,7 @@ const UserProfile = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`https://marvel-ai-hackathon.vercel.app/getUserData/${userId}`);
+        const response = await fetch(`api/getUserData/${userId}`);
         if (!response.ok) {
             throw new Error(`Error: ${response.status}`);
           }
