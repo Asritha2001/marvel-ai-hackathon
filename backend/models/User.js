@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -16,18 +16,18 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
   experience: {
-    type: String, 
-    enum: ['Beginner', 'Intermediate', 'Advanced'], 
-    default: 'Beginner',
+    type: String,
+    enum: ["Beginner", "Intermediate", "Advanced"],
+    default: "Beginner",
   },
   preferredLanguages: {
     type: [String],
   },
   learningGoals: {
-    type: String, 
-  }
+    type: String,
+  },
 });
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 
 module.exports = User;
