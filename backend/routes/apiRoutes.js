@@ -7,9 +7,16 @@ router.post('/login',userController.login)
 router.get('/getUserData/:id',userController.getUserData)
 router.put('/updateUserData/:id',userController.updateUserData)
 
+
+router.post(
+  "/processUserDataWithOpenAI/:id",
+  userController.processUserDataWithOpenAI,
+);
+router.get("/getPromptResponses/:id", userController.getPromptResponsesByUser);
+
 router.post('/createPromptResponse/:id',promptController.createPromptResponse)
-router.get('/getPromptResponse/:id',promptController.getPromptResponsesByUserId)
 router.put('/updatePromptResponse/:id',promptController.updatePromptResponse)
+
 
 
 
