@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import axiosInstance from '../axios';
+import { Link, useNavigate } from 'react-router-dom';
 import image from '../assets/image.png';
 
-function Signup() {
-  const [formData, setFormData] = useState({ username: '', email: '', password: ''});
+function Login() {
+  const [formData, setFormData] = useState({ username: '', password: ''});
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -17,10 +18,13 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.post('/signup', formData);
-      setSuccessMessage(response.data.message || 'SignUp Successful!');
+      const response = await axiosInstance.post('/login', formData);
+      const { user } = response.data;
+      localStorage.setItem('userId', user._id);
+      setSuccessMessage(response.data.message || 'Login Successful!');
       setErrorMessage('');
-      setFormData({ username: '', email: '', password: ''});
+      setFormData({ username: '', password: ''});
+      navigate('/user');
     }
     catch(error) {
       setErrorMessage(error.response ? error.response.data.message : 'Something went wrong!');
@@ -41,7 +45,7 @@ function Signup() {
       </div>
 
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg text-gray-800">
-        <h2 className="text-3xl font-bold text-center mb-4">Signup</h2>
+        <h2 className="text-3xl font-bold text-center mb-4">Login</h2>
         {successMessage && (
           <p className="text-green-500 text-center mb-4">{successMessage}</p>
         )}
@@ -51,7 +55,7 @@ function Signup() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700" htmlFor="username">
-              Username:
+              Username/Email:
             </label>
             <input
               type="text"
@@ -60,22 +64,7 @@ function Signup() {
               value={formData.username}
               onChange={handleChange}
               className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your username"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="email">
-              Email:
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email"
+              placeholder="Enter your username or email"
               required
             />
           </div>
@@ -138,13 +127,13 @@ function Signup() {
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            Signup
+            Login
           </button>
         </form>
         <p className="text-sm text-center text-gray-600 mt-4">
-          Already have an account?{' '}
-          <Link to="/login" className="text-blue-500 hover:underline">
-            Login here
+          Doesn't have an account?{' '}
+          <Link to="/signup" className="text-blue-500 hover:underline">
+            Signup here
           </Link>
         </p>
       </div>
@@ -152,4 +141,4 @@ function Signup() {
   );
 }
 
-export default Signup;
+export default Login;

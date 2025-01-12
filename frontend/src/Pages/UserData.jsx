@@ -1,25 +1,28 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../axios';
 
 const UserProfile = () => {
   const [userData, setUserData] = useState(null);
-  const userId = '6782c6f341c5bfd6853cc656';
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        setError('No user ID found. Please login again.');
+        console.log('userId not found');
+        return;
+      }
       try {
-        const response = await fetch(`api/getUserData/${userId}`);
-        if (!response.ok) {
-            throw new Error(`Error: ${response.status}`);
-          }
-        const data = await response.json();
-        setUserData(data);
+        const response = await axiosInstance.get(`/getUserData/${userId}`);
+        setUserData(response.data);
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
     };
 
     fetchUserData();
-  }, [userId]);
+  }, []);
 
   return (
     <div>

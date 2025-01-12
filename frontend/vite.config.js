@@ -11,14 +11,14 @@ export default defineConfig({
       plugins: [tailwindcss, autoprefixer],
     },
   },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'https://marvel-ai-hackathon.vercel.app',
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
-  },
+  // server: {
+  //   proxy: {
+  //     '/api': {
+  //       target: 'https://marvel-ai-hackathon.vercel.app',
+  //       changeOrigin: true,
+  //       secure: true,
+  //       rewrite: (path) => path.replace(/^\/api/, ''),
+  //     },
+  //   },
+  // },
 });
