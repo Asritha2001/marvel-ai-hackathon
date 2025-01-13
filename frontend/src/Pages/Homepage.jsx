@@ -108,6 +108,14 @@ const HomePage = () => {
             });
             const userId = localStorage.getItem('userId');
             console.log("Request sending", formData);
+            const response1 = await axiosInstance.put(`/updateUserData/${userId}`, {
+                experience: formData.experience,
+                preferredLanguages: formData.preferredLang,
+                learningGoals: formData.learningGoals,
+                prompt: formData.prompt, 
+            });
+            console.log('Response from updateUserData API:', response1.status);
+            if (response1.status == 200) {
 
             const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
                 experience: formData.experience,
@@ -117,7 +125,6 @@ const HomePage = () => {
             });
             console.log("Response:", response.data.result);
             setGeneratedPrompt(response.data.result);
-
             // Save the current session to localStorage
             localStorage.setItem(
                 'unsavedLesson',
@@ -128,6 +135,7 @@ const HomePage = () => {
             );
 
             setIsLocked(true); // Lock the form
+        }
         } catch (error) {
             console.error('Error generating prompt:', error);
             Swal.fire({
@@ -152,6 +160,14 @@ const HomePage = () => {
                 language: formData.preferredLang,
                 expertise: formData.learningGoals,
             });
+            const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
+                experience: formData.experience,
+                preferredLanguages: formData.preferredLang,
+                learningGoals: formData.learningGoals,
+                prompt: formData.prompt, 
+                completedLesson: true,
+            });
+            console.log("reponse", response.data.result);
 
             Swal.fire({
                 icon: 'success',
