@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import image from '../assets/image.png';
 
 function Login() {
-  const [formData, setFormData] = useState({ username: '', password: ''});
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -23,28 +23,27 @@ function Login() {
       localStorage.setItem('userId', user._id);
       setSuccessMessage(response.data.message || 'Login Successful!');
       setErrorMessage('');
-      setFormData({ username: '', password: ''});
-      navigate('/user');
-    }
-    catch(error) {
+      setFormData({ username: '', password: '' });
+      navigate('/homepage');
+    } catch (error) {
       setErrorMessage(error.response ? error.response.data.message : 'Something went wrong!');
       setSuccessMessage('');
     }
   };
 
-  const togglePasswordVisibility = () => { 
+  const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-royal-blue text-gray p-2">
-      <div className="text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-2">
+      <div className="text-center mb-6">
         <img src={image} alt="Logo" className="w-20 h-20 mx-auto" />
-        <h1 className="text-3xl font-bold text-gray-800">Marvel AI</h1>
-        <p className="text-base font-medium text-gray-600">The world is your canvas</p>
+        <h1 className="text-3xl font-bold text-white">Marvel AI</h1>
+        <p className="text-base font-medium text-gray-400">The world is your canvas</p>
       </div>
 
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg text-gray-800">
+      <div className="w-full max-w-md p-8 rounded-lg shadow-lg bg-gray-800">
         <h2 className="text-3xl font-bold text-center mb-4">Login</h2>
         {successMessage && (
           <p className="text-green-500 text-center mb-4">{successMessage}</p>
@@ -54,7 +53,7 @@ function Login() {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="username">
+            <label className="block text-sm font-medium text-gray-200" htmlFor="username">
               Username/Email:
             </label>
             <input
@@ -63,30 +62,30 @@ function Login() {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 mt-1 border border-gray-700 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
               placeholder="Enter your username or email"
               required
             />
           </div>
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700" htmlFor="password">
+            <label className="block text-sm font-medium text-gray-200" htmlFor="password">
               Password:
             </label>
-            <div className="flex items-center w-full mt-1 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+            <div className="flex items-center w-full mt-1 border border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-purple-600 bg-gray-700">
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="flex-1 px-4 py-2 focus:outline-none rounded-l-lg"
+                className="flex-1 px-4 py-2 bg-gray-700 text-white focus:outline-none rounded-l-lg"
                 placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="px-3 text-gray-500 focus:outline-none"
+                className="px-3 text-gray-400 hover:text-white focus:outline-none"
                 aria-label="Toggle password visibility"
               >
                 {showPassword ? (
@@ -125,14 +124,14 @@ function Login() {
           </div>
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             Login
           </button>
         </form>
-        <p className="text-sm text-center text-gray-600 mt-4">
-          Doesn't have an account?{' '}
-          <Link to="/signup" className="text-blue-500 hover:underline">
+        <p className="text-m text-center text-gray-400 mt-4">
+          Don't have an account?{' '}
+          <Link to="/signup" className="text-purple-400 hover:underline">
             Signup here
           </Link>
         </p>

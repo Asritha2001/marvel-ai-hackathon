@@ -4,7 +4,7 @@ import axiosInstance from '../axios';
 import image from '../assets/image.png';
 
 function Signup() {
-  const [formData, setFormData] = useState({ username: '', email: '', password: ''});
+  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -18,29 +18,28 @@ function Signup() {
     e.preventDefault();
     try {
       const response = await axiosInstance.post('/signup', formData);
-      setSuccessMessage(response.data.message || 'SignUp Successful!');
+      setSuccessMessage(response.data.message || 'Signup Successful!');
       setErrorMessage('');
-      setFormData({ username: '', email: '', password: ''});
-    }
-    catch(error) {
+      setFormData({ username: '', email: '', password: '' });
+    } catch (error) {
       setErrorMessage(error.response ? error.response.data.message : 'Something went wrong!');
       setSuccessMessage('');
     }
   };
 
-  const togglePasswordVisibility = () => { 
+  const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-royal-blue text-gray p-2">
-      <div className="text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-2">
+      <div className="text-center mb-6">
         <img src={image} alt="Logo" className="w-20 h-20 mx-auto" />
-        <h1 className="text-3xl font-bold text-gray-800">Marvel AI</h1>
-        <p className="text-base font-medium text-gray-600">The world is your canvas</p>
+        <h1 className="text-3xl font-bold text-white">Marvel AI</h1>
+        <p className="text-base font-medium text-gray-400">The world is your canvas</p>
       </div>
 
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg text-gray-800">
+      <div className="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-lg">
         <h2 className="text-3xl font-bold text-center mb-4">Signup</h2>
         {successMessage && (
           <p className="text-green-500 text-center mb-4">{successMessage}</p>
@@ -50,7 +49,7 @@ function Signup() {
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="username">
+            <label className="block text-sm font-medium text-gray-200" htmlFor="username">
               Username:
             </label>
             <input
@@ -59,13 +58,13 @@ function Signup() {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 mt-1 border border-gray-700 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
               placeholder="Enter your username"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="email">
+            <label className="block text-sm font-medium text-gray-200" htmlFor="email">
               Email:
             </label>
             <input
@@ -74,30 +73,30 @@ function Signup() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-4 py-2 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 mt-1 border border-gray-700 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
               placeholder="Enter your email"
               required
             />
           </div>
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700" htmlFor="password">
+            <label className="block text-sm font-medium text-gray-200" htmlFor="password">
               Password:
             </label>
-            <div className="flex items-center w-full mt-1 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+            <div className="flex items-center w-full mt-1 border border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-purple-600 bg-gray-700">
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="flex-1 px-4 py-2 focus:outline-none rounded-l-lg"
+                className="flex-1 px-4 py-2 bg-gray-700 text-white focus:outline-none rounded-l-lg"
                 placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="px-3 text-gray-500 focus:outline-none"
+                className="px-3 text-gray-400 hover:text-white focus:outline-none"
                 aria-label="Toggle password visibility"
               >
                 {showPassword ? (
@@ -136,14 +135,14 @@ function Signup() {
           </div>
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             Signup
           </button>
         </form>
-        <p className="text-sm text-center text-gray-600 mt-4">
+        <p className="text-m text-center text-gray-400 mt-4">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-500 hover:underline">
+          <Link to="/login" className="text-purple-400 hover:underline">
             Login here
           </Link>
         </p>
