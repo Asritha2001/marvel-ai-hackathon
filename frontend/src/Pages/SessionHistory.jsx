@@ -3,7 +3,6 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axios';
 
 const SessionHistory = () => {
-    const [currentLesson, setCurrentLesson] = useState(null);
     const [sessionHistory, setSessionHistory] = useState([]);
     const navigate = useNavigate();
 
@@ -13,24 +12,28 @@ const SessionHistory = () => {
     };
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchSessionHistory = async () => {
             const userId = localStorage.getItem('userId');
             if (!userId) {
                 navigate('/login');
                 return;
             }
             try {
-                console.log("Tried");
+                console.log("calling api");
+                const response = await axiosInstance.get(`/getSessionbyID/${userId}`);
+                console.log("response", response);
+                console.log('Session history:', response.data.data);
+                setSessionHistory(response.data.data); // Set the retrieved data in the state
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error('Error fetching session history:', error);
+                if (error.response && error.response.status === 404) {
+                    setSessionHistory([]); // If no sessions are found, clear the history
+                }
             }
         };
-        fetchData();
-    }, [navigate]);
 
-    const handleGenerateNewPrompt = () => {
-        navigate('/homepage');
-    };
+        fetchSessionHistory();
+    }, [navigate]);
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -70,39 +73,9 @@ const SessionHistory = () => {
                 </button>
             </nav>
 
-            <div className="flex gap-6 p-4">
-                {/* Left Section: Current Lesson */}
-                <div className="w-1/2 bg-gray-800 p-4 rounded-lg shadow-lg">
-                    <h2 className="text-xl font-bold mb-4">Current Lesson</h2>
-                    {currentLesson ? (
-                        <div className="border border-purple-500 rounded-lg p-4">
-                            <h3 className="text-lg font-bold">{currentLesson.title}</h3>
-                            <ul className="list-disc list-inside text-gray-300">
-                                {currentLesson.takeaways.map((takeaway, index) => (
-                                    <li key={index}>{takeaway}</li>
-                                ))}
-                            </ul>
-                            <button
-                                className="mt-4 w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                                onClick={() => alert('Resume Lesson clicked!')}
-                            >
-                                Resume Lesson
-                            </button>
-                        </div>
-                    ) : (
-                        <p className="text-gray-400">You haven’t started a lesson yet.</p>
-                    )}
-                    <button
-                        className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                        onClick={handleGenerateNewPrompt}
-                    >
-                        Generate New Prompt
-                    </button>
-
-                </div>
-
-                {/* Right Section: Session History */}
-                <div className="w-1/2 bg-gray-800 p-4 rounded-lg shadow-lg">
+            <div className="flex justify-center p-4">
+                {/* Session History */}
+                <div className="w-full max-w-3xl bg-gray-800 p-4 rounded-lg shadow-lg">
                     <h2 className="text-xl font-bold mb-4">Session History</h2>
                     {sessionHistory.length > 0 ? (
                         <div className="border border-purple-500 rounded-lg overflow-y-auto max-h-96">
@@ -117,10 +90,10 @@ const SessionHistory = () => {
                                     {sessionHistory.map((session, index) => (
                                         <tr key={index}>
                                             <td className="px-4 py-2 border-b border-gray-700">
-                                                {session.title}
+                                                {session.expertise || 'Untitled Session'}
                                             </td>
                                             <td className="px-4 py-2 border-b border-gray-700">
-                                                {new Date(session.dateLaunched).toLocaleString()}
+                                                {new Date(session.time).toLocaleString()}
                                             </td>
                                         </tr>
                                     ))}

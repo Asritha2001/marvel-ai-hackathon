@@ -2,21 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axios';
 import Swal from 'sweetalert2';
+import ReactMarkdown from 'react-markdown';
 
 const HomePage = () => {
     const [userName, setUserName] = useState('');
-    const [errors, setErrors] = useState({});
-    const [isComplete, setIsComplete] = useState(false);
-
     const [formData, setFormData] = useState({
         experience: '',
         preferredLang: '',
         learningGoals: '',
-        additionalInfo: '',
+        prompt: '',
     });
+    const [isLocked, setIsLocked] = useState(false);
+    const [generatedPrompt, setGeneratedPrompt] = useState('');
     const navigate = useNavigate();
 
-    // Logout function
     const handleLogout = () => {
         localStorage.removeItem('userId');
         navigate('/login');
@@ -33,7 +32,7 @@ const HomePage = () => {
                 const response = await axiosInstance.get(`/getUserData/${userId}`);
                 setUserName(response.data.user.username);
             } catch (error) {
-                console.error("Error fetching user data", error);
+                console.error('Error fetching user data', error);
                 handleLogout();
             }
         };
@@ -42,55 +41,113 @@ const HomePage = () => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        if (isLocked && (name === 'experience' || name === 'preferredLang')) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Action Not Allowed',
+                text: 'You cannot change your experience level or preferred language until the lesson is marked as complete.',
+                confirmButtonColor: '#6b46c1',
+            });
+            return;
+        }
         setFormData({ ...formData, [name]: value });
-        if (errors[name]) {
-            setErrors({ ...errors, [name]: '' });
+    };
+
+    const handleGeneratePrompt = async () => {
+        if (!formData.experience || !formData.preferredLang || !formData.learningGoals) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Missing Fields',
+                text: 'Please fill in all the required fields: Experience, Coding Language, and What to Learn.',
+                confirmButtonColor: '#6b46c1',
+            });
+            return;
+        }
+        // put the user data.
+        try {
+            const userId = localStorage.getItem('userId');
+            console.log("request sending", formData);
+
+            const response1 = await axiosInstance.put(`/updateUserData/${userId}`, {
+                experience: formData.experience,
+                preferredLanguages: formData.preferredLang,
+                learningGoals: formData.learningGoals,
+                prompt: formData.prompt, 
+            });
+            console.log('Response from updateUserData API:', response1.status);
+            if (response1.status == 200) {
+            const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
+                experience: formData.experience,
+                preferredLanguages: formData.preferredLang,
+                learningGoals: formData.learningGoals,
+                prompt: formData.prompt, 
+            });
+            console.log("reponse", response.data.result);
+            setGeneratedPrompt(response.data.result);
+            setIsLocked(true);
+        }
+        } catch (error) {
+            console.error('Error generating prompt:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please try agian',
+                confirmButtonColor: '#6b46c1',
+            });
         }
     };
 
-    const handleGeneratePrompt = async (e) => {
-        e.preventDefault();
-        const validationErrors = {};
-        if (!formData.experience) {
-            validationErrors.experience = 'Please select your experience level.';
-        }
-        if (!formData.preferredLang) {
-            validationErrors.preferredLang = 'Please select a coding language.';
-        }
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
-        console.log(formData);
+    const handleMarkAsComplete = async () => {
         try {
-            alert('prompt generated sucessfully');
-            // const userId = localStorage.getItem('userId');
-            // const response = await axiosInstance.post(`/generatePrompt/${userId}`, formData);
+            setIsLocked(false);
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                console.error('User ID not found in localStorage');
+                return;
+            }
+            // post req to create a session
+            // post to geminiAI api
+            const response1 = await axiosInstance.post(`/createSession/${userId}`, {
+                experience: formData.experience,
+                Language: formData.preferredLang,
+                expertise: formData.learningGoals,
+            });
+            console.log("creating session", response1.data);
+            const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
+                experience: formData.experience,
+                preferredLanguages: formData.preferredLang,
+                learningGoals: formData.learningGoals,
+                prompt: formData.prompt, 
+                completedLesson: true,
+            });
+            console.log("reponse", response.data.result);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Lesson Completed',
+                text: 'Great job! Your lesson has been marked as complete.',
+                confirmButtonColor: '#6b46c1',
+            });
+    
             setFormData({
                 experience: '',
                 preferredLang: '',
                 learningGoals: '',
-                additionalInfo: '',
+                prompt: '',
             });
-            setIsComplete(false);
-            setErrors({});
+    
+            setGeneratedPrompt('');
+    
+        } catch (error) {
+            console.error('Error marking lesson as complete:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to mark the lesson as complete. Please try again.',
+                confirmButtonColor: '#6b46c1',
+            });
         }
-        catch (error) {
-            alert('Failed to generate prompt. Please try again.');
-        }
-    };
-
-    const handleMarkAsComplete = async (e) => {
-        setIsComplete(true);
-        Swal.fire({
-            title: '🎉 Lesson Completed!',
-            text: 'Great job! Keep up the good work.',
-            icon: 'success',
-            confirmButtonText: 'Awesome',
-            confirmButtonColor: '#6b46c1',
-        });
-        console.log("Marked");
-    };
+    };    
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -101,7 +158,9 @@ const HomePage = () => {
                         to="/homepage"
                         className={({ isActive }) =>
                             `px-4 py-2 rounded-lg ${
-                                isActive ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                isActive
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             }`
                         }
                     >
@@ -111,7 +170,9 @@ const HomePage = () => {
                         to="/sessionhistory"
                         className={({ isActive }) =>
                             `px-4 py-2 rounded-lg ${
-                                isActive ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                isActive
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             }`
                         }
                     >
@@ -127,13 +188,12 @@ const HomePage = () => {
             </nav>
 
             {/* Main Content */}
-            <div className="flex-1 flex p-4 gap-4">
+            <div className="flex-1 flex p-4 gap-4 h-full">
+                {/* Left Section */}
                 <div className="w-1/3 bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col justify-between">
                     <div>
                         <h2 className="text-lg font-bold mb-4">Hello {userName}, Start Learning Coding</h2>
-
-                        {/* Form for Generate Prompt */}
-                        <form onSubmit={handleGeneratePrompt}>
+                        <form>
                             <div className="mb-4">
                                 <label className="block mb-2 text-sm">Experience Level*</label>
                                 <select
@@ -141,15 +201,14 @@ const HomePage = () => {
                                     value={formData.experience}
                                     onChange={handleInputChange}
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
+                                    required
+                                    // disabled={isLocked} // Disable if locked
                                 >
                                     <option value="">Choose</option>
                                     <option value="beginner">Beginner</option>
                                     <option value="intermediate">Intermediate</option>
                                     <option value="advanced">Advanced</option>
                                 </select>
-                                {errors.experience && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.experience}</p>
-                                )}
                             </div>
 
                             <div className="mb-4">
@@ -159,6 +218,8 @@ const HomePage = () => {
                                     value={formData.preferredLang}
                                     onChange={handleInputChange}
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
+                                    required
+                                    // disabled={isLocked} // Disable if locked
                                 >
                                     <option value="">Choose</option>
                                     <option value="python">Python</option>
@@ -166,9 +227,6 @@ const HomePage = () => {
                                     <option value="java">Java</option>
                                     <option value="c++">C++</option>
                                 </select>
-                                {errors.preferredLang && (
-                                    <p className="text-red-500 text-sm mt-1">{errors.preferredLang}</p>
-                                )}
                             </div>
 
                             <div className="mb-4">
@@ -187,42 +245,55 @@ const HomePage = () => {
                             <div className="mb-4">
                                 <label className="block mb-2 text-sm">Anything else I should know?</label>
                                 <textarea
-                                    name="additionalInfo"
-                                    value={formData.additionalInfo}
+                                    name="prompt"
+                                    value={formData.prompt}
                                     onChange={handleInputChange}
                                     rows="2"
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
                                     placeholder="Add any additional information..."
                                 ></textarea>
                             </div>
-
-                            <button
-                                type="submit"
-                                className="bg-purple-500 px-3 py-2 rounded-lg hover:bg-purple-700 w-full"
-                            >
-                                Generate Prompt
-                            </button>
                         </form>
                     </div>
 
-                    <div className="mt-4">
-                            <button
-                                className={`px-3 py-2 rounded-lg w-full ${
-                                    isComplete
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-blue-500 hover:bg-blue-700'
-                                }`}
-                                onClick={handleMarkAsComplete}
-                                disabled={isComplete}
-                            >
+                    {/* Buttons */}
+                    <div className="flex flex-col gap-4">
+                        <button
+                            className="bg-purple-500 px-3 py-2 rounded-lg hover:bg-purple-700"
+                            onClick={handleGeneratePrompt}
+                        >
+                            Generate Prompt
+                        </button>
+                        <button
+                            className="bg-blue-500 px-3 py-2 rounded-lg hover:bg-blue-700"
+                            onClick={handleMarkAsComplete}
+                        >
                             Mark as Complete
                         </button>
                     </div>
                 </div>
 
-                <div className="flex-1 bg-purple-300 p-4 rounded-lg shadow-lg flex items-center justify-center">
-                    <h2 className="text-lg font-bold text-gray-800">Interactive coding activity area is here</h2>
+                {/* Right Section */}
+                <div
+                    className="flex-1 bg-purple-300 p-4 rounded-lg shadow-lg"
+                    style={{ height: 'calc(100vh)' }} // Adjust height based on your navbar height
+                >
+                    <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">AI-Generated Prompt</h2>
+                    <div
+                        className="h-full overflow-y-auto p-4 bg-purple-200 rounded-lg"
+                        style={{ maxHeight: 'calc(100vh - 100px)' }} // Adjust for title and padding
+                    >
+                        {generatedPrompt ? (
+                            <ReactMarkdown className="prose prose-purple max-w-none">{generatedPrompt}</ReactMarkdown>
+                        ) : (
+                            <div className="flex items-center justify-center h-full">
+                                <p className="text-gray-600 text-center">Interactive coding activity area is here</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+
             </div>
         </div>
     );
