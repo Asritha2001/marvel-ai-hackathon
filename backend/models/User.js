@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
     default: "Beginner",
   },
   preferredLanguages: {
-    type: [String],
+    type: String,
   },
   learningGoals: {
     type: String,

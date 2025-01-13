@@ -1,7 +1,5 @@
 const User = require("../models/User");
-const PromptResponse = require("../models/PromptResponse");
 const mongoose = require("mongoose"); // For ObjectId validation
-const axios = require("axios"); // For api calls
 
 // Signup API
 exports.signup = async (req, res) => {

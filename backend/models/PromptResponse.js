@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const promptResponseSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
     required: true,
   },
   prompt: {
@@ -12,6 +11,10 @@ const promptResponseSchema = new mongoose.Schema({
   },
   response: {
     type: String,
+  },
+  completedLesson: {
+    type:Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,
