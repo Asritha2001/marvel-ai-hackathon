@@ -17,6 +17,23 @@ const HomePage = () => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
+        // Save the current form data in localStorage if the lesson is not marked as complete
+        if (generatedPrompt && isLocked) {
+            localStorage.setItem(
+                'unsavedLesson',
+                JSON.stringify({
+                    experience: formData.experience,
+                    preferredLang: formData.preferredLang,
+                    learningGoals: formData.learningGoals,
+                    prompt: formData.prompt,
+                    generatedPrompt,
+                })
+            );
+        } else {
+            localStorage.removeItem('unsavedLesson');
+        }
+
+        // Clear user data and navigate to login
         localStorage.removeItem('userId');
         navigate('/login');
     };
@@ -28,14 +45,32 @@ const HomePage = () => {
                 handleLogout();
                 return;
             }
+
+            // Check if there is unsaved lesson data in localStorage
+            const unsavedLesson = localStorage.getItem('unsavedLesson');
+            if (unsavedLesson) {
+                const savedData = JSON.parse(unsavedLesson);
+                setFormData({
+                    experience: savedData.experience || '',
+                    preferredLang: savedData.preferredLang || '',
+                    learningGoals: savedData.learningGoals || '',
+                    prompt: savedData.prompt || '',
+                });
+                setGeneratedPrompt(savedData.generatedPrompt || '');
+                setIsLocked(true); // Lock the form
+                return;
+            }
+
             try {
+                // Fetch user details from the API
                 const response = await axiosInstance.get(`/getUserData/${userId}`);
                 setUserName(response.data.user.username);
             } catch (error) {
-                console.error('Error fetching user data', error);
+                console.error('Error fetching user data:', error);
                 handleLogout();
             }
         };
+
         fetchUserData();
     }, []);
 
@@ -63,35 +98,42 @@ const HomePage = () => {
             });
             return;
         }
-        // put the user data.
-        try {
-            const userId = localStorage.getItem('userId');
-            console.log("request sending", formData);
 
-            const response1 = await axiosInstance.put(`/updateUserData/${userId}`, {
-                experience: formData.experience,
-                preferredLanguages: formData.preferredLang,
-                learningGoals: formData.learningGoals,
-                prompt: formData.prompt, 
+        try {
+            Swal.fire({
+                icon: 'success',
+                title: 'Promt is generating',
+                text: 'Please wait while the prompt is generating!',
+                confirmButtonColor: '#6b46c1',
             });
-            console.log('Response from updateUserData API:', response1.status);
-            if (response1.status == 200) {
+            const userId = localStorage.getItem('userId');
+            console.log("Request sending", formData);
+
             const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
                 experience: formData.experience,
                 preferredLanguages: formData.preferredLang,
                 learningGoals: formData.learningGoals,
-                prompt: formData.prompt, 
+                prompt: formData.prompt,
             });
-            console.log("reponse", response.data.result);
+            console.log("Response:", response.data.result);
             setGeneratedPrompt(response.data.result);
-            setIsLocked(true);
-        }
+
+            // Save the current session to localStorage
+            localStorage.setItem(
+                'unsavedLesson',
+                JSON.stringify({
+                    ...formData,
+                    generatedPrompt: response.data.result,
+                })
+            );
+
+            setIsLocked(true); // Lock the form
         } catch (error) {
             console.error('Error generating prompt:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Please try agian',
+                text: 'Please try again',
                 confirmButtonColor: '#6b46c1',
             });
         }
@@ -99,45 +141,35 @@ const HomePage = () => {
 
     const handleMarkAsComplete = async () => {
         try {
-            setIsLocked(false);
             const userId = localStorage.getItem('userId');
             if (!userId) {
                 console.error('User ID not found in localStorage');
                 return;
             }
-            // post req to create a session
-            // post to geminiAI api
-            const response1 = await axiosInstance.post(`/createSession/${userId}`, {
+
+            await axiosInstance.post(`/createSession/${userId}`, {
                 experience: formData.experience,
-                Language: formData.preferredLang,
+                language: formData.preferredLang,
                 expertise: formData.learningGoals,
             });
-            console.log("creating session", response1.data);
-            const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
-                experience: formData.experience,
-                preferredLanguages: formData.preferredLang,
-                learningGoals: formData.learningGoals,
-                prompt: formData.prompt, 
-                completedLesson: true,
-            });
-            console.log("reponse", response.data.result);
-            
+
             Swal.fire({
                 icon: 'success',
                 title: 'Lesson Completed',
                 text: 'Great job! Your lesson has been marked as complete.',
                 confirmButtonColor: '#6b46c1',
             });
-    
+
+            // Clear form and localStorage
             setFormData({
                 experience: '',
                 preferredLang: '',
                 learningGoals: '',
                 prompt: '',
             });
-    
             setGeneratedPrompt('');
-    
+            setIsLocked(false);
+            localStorage.removeItem('unsavedLesson');
         } catch (error) {
             console.error('Error marking lesson as complete:', error);
             Swal.fire({
@@ -147,20 +179,17 @@ const HomePage = () => {
                 confirmButtonColor: '#6b46c1',
             });
         }
-    };    
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-            {/* Navbar */}
             <nav className="flex justify-between items-center px-6 py-4 bg-gray-800">
                 <div className="flex gap-4">
                     <NavLink
                         to="/homepage"
                         className={({ isActive }) =>
                             `px-4 py-2 rounded-lg ${
-                                isActive
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                isActive ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             }`
                         }
                     >
@@ -170,9 +199,7 @@ const HomePage = () => {
                         to="/sessionhistory"
                         className={({ isActive }) =>
                             `px-4 py-2 rounded-lg ${
-                                isActive
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                isActive ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                             }`
                         }
                     >
@@ -187,9 +214,7 @@ const HomePage = () => {
                 </button>
             </nav>
 
-            {/* Main Content */}
             <div className="flex-1 flex p-4 gap-4 h-full">
-                {/* Left Section */}
                 <div className="w-1/3 bg-gray-800 p-4 rounded-lg shadow-lg flex flex-col justify-between">
                     <div>
                         <h2 className="text-lg font-bold mb-4">Hello {userName}, Start Learning Coding</h2>
@@ -202,7 +227,7 @@ const HomePage = () => {
                                     onChange={handleInputChange}
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
                                     required
-                                    // disabled={isLocked} // Disable if locked
+                                    disabled={isLocked}
                                 >
                                     <option value="">Choose</option>
                                     <option value="beginner">Beginner</option>
@@ -210,7 +235,6 @@ const HomePage = () => {
                                     <option value="advanced">Advanced</option>
                                 </select>
                             </div>
-
                             <div className="mb-4">
                                 <label className="block mb-2 text-sm">Coding Language*</label>
                                 <select
@@ -219,7 +243,7 @@ const HomePage = () => {
                                     onChange={handleInputChange}
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
                                     required
-                                    // disabled={isLocked} // Disable if locked
+                                    disabled={isLocked}
                                 >
                                     <option value="">Choose</option>
                                     <option value="python">Python</option>
@@ -228,7 +252,6 @@ const HomePage = () => {
                                     <option value="c++">C++</option>
                                 </select>
                             </div>
-
                             <div className="mb-4">
                                 <label className="block mb-2 text-sm">What do you want to learn?*</label>
                                 <textarea
@@ -239,9 +262,9 @@ const HomePage = () => {
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
                                     placeholder="Describe what you want to learn..."
                                     required
+                                    disabled={isLocked}
                                 ></textarea>
                             </div>
-
                             <div className="mb-4">
                                 <label className="block mb-2 text-sm">Anything else I should know?</label>
                                 <textarea
@@ -251,16 +274,18 @@ const HomePage = () => {
                                     rows="2"
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
                                     placeholder="Add any additional information..."
+                                    disabled={isLocked}
                                 ></textarea>
                             </div>
                         </form>
                     </div>
-
-                    {/* Buttons */}
                     <div className="flex flex-col gap-4">
                         <button
-                            className="bg-purple-500 px-3 py-2 rounded-lg hover:bg-purple-700"
+                            className={`bg-purple-500 px-3 py-2 rounded-lg ${
+                                generatedPrompt ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700'
+                            }`}
                             onClick={handleGeneratePrompt}
+                            disabled={!!generatedPrompt} // Disable the button if generatedPrompt has a value
                         >
                             Generate Prompt
                         </button>
@@ -292,8 +317,6 @@ const HomePage = () => {
                         )}
                     </div>
                 </div>
-
-
             </div>
         </div>
     );

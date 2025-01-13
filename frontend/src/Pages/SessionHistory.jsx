@@ -82,13 +82,21 @@ const SessionHistory = () => {
                             <table className="w-full text-left text-gray-300">
                                 <thead>
                                     <tr>
-                                        <th className="px-4 py-2 border-b border-gray-600">Title</th>
+                                        <th className="px-4 py-2 border-b border-gray-600">Experience</th>
+                                        <th className="px-4 py-2 border-b border-gray-600">Language</th>
+                                        <th className="px-4 py-2 border-b border-gray-600">Learning Goal</th>
                                         <th className="px-4 py-2 border-b border-gray-600">Date Launched</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {sessionHistory.map((session, index) => (
                                         <tr key={index}>
+                                            <td className="px-4 py-2 border-b border-gray-700">
+                                                {session.experience || 'Untitled Session'}
+                                            </td>
+                                            <td className="px-4 py-2 border-b border-gray-700">
+                                                {session.language || 'Untitled Session'}
+                                            </td>
                                             <td className="px-4 py-2 border-b border-gray-700">
                                                 {session.expertise || 'Untitled Session'}
                                             </td>

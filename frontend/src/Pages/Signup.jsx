@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../axios';
 import image from '../assets/image.png';
 
@@ -8,6 +8,7 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,6 +22,7 @@ function Signup() {
       setSuccessMessage(response.data.message || 'Signup Successful!');
       setErrorMessage('');
       setFormData({ username: '', email: '', password: '' });
+      navigate('/login');
     } catch (error) {
       setErrorMessage(error.response ? error.response.data.message : 'Something went wrong!');
       setSuccessMessage('');
