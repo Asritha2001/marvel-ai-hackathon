@@ -108,7 +108,7 @@ const HomePage = () => {
                         Home
                     </NavLink>
                     <NavLink
-                        to="/sessions"
+                        to="/sessionhistory"
                         className={({ isActive }) =>
                             `px-4 py-2 rounded-lg ${
                                 isActive ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
