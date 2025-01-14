@@ -296,6 +296,12 @@ const HomePage = () => {
                                     <option value="javascript">JavaScript</option>
                                     <option value="java">Java</option>
                                     <option value="c++">C++</option>
+                                    <option value="ruby">Ruby</option>
+                                    <option value="swift">Swift</option>
+                                    <option value="go">Go</option>
+                                    <option value="php">PHP</option>
+                                    <option value="scala">Scala</option>
+                                    <option value="rust">Rust</option>
                                 </select>
                             </div>
                             <div className="mb-4">
