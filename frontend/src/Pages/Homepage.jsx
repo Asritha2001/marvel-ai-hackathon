@@ -14,10 +14,10 @@ const HomePage = () => {
     });
     const [isLocked, setIsLocked] = useState(false);
     const [generatedPrompt, setGeneratedPrompt] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false); // New state for tracking button status
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        // Save the current form data in localStorage if the lesson is not marked as complete
         if (generatedPrompt && isLocked) {
             localStorage.setItem(
                 'unsavedLesson',
@@ -32,8 +32,6 @@ const HomePage = () => {
         } else {
             localStorage.removeItem('unsavedLesson');
         }
-
-        // Clear user data and navigate to login
         localStorage.removeItem('userId');
         navigate('/login');
     };
@@ -46,7 +44,6 @@ const HomePage = () => {
                 return;
             }
 
-            // Check if there is unsaved lesson data in localStorage
             const unsavedLesson = localStorage.getItem('unsavedLesson');
             if (unsavedLesson) {
                 const savedData = JSON.parse(unsavedLesson);
@@ -57,12 +54,11 @@ const HomePage = () => {
                     prompt: savedData.prompt || '',
                 });
                 setGeneratedPrompt(savedData.generatedPrompt || '');
-                setIsLocked(true); // Lock the form
+                setIsLocked(true);
                 return;
             }
 
             try {
-                // Fetch user details from the API
                 const response = await axiosInstance.get(`/getUserData/${userId}`);
                 setUserName(response.data.user.username);
             } catch (error) {
@@ -98,34 +94,37 @@ const HomePage = () => {
             });
             return;
         }
-
+    
+        setIsGenerating(true); // Set loading state
+        Swal.fire({
+            title: 'Loading Response...',
+            text: 'Please wait while the response is being generated...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading(); // Start the loading animation
+            },
+        });
+    
         try {
-            Swal.fire({
-                icon: 'success',
-                title: 'Promt is generating',
-                text: 'Please wait while the prompt is generating!',
-                confirmButtonColor: '#6b46c1',
-            });
             const userId = localStorage.getItem('userId');
-            console.log("Request sending", formData);
-            const response1 = await axiosInstance.put(`/updateUserData/${userId}`, {
+            await axiosInstance.put(`/updateUserData/${userId}`, {
                 experience: formData.experience,
                 preferredLanguages: formData.preferredLang,
                 learningGoals: formData.learningGoals,
-                prompt: formData.prompt, 
+                prompt: formData.prompt,
             });
-            console.log('Response from updateUserData API:', response1.status);
-            if (response1.status == 200) {
-
+    
             const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
                 experience: formData.experience,
                 preferredLanguages: formData.preferredLang,
                 learningGoals: formData.learningGoals,
                 prompt: formData.prompt,
             });
-            console.log("Response:", response.data.result);
+    
+            // Update generated prompt
             setGeneratedPrompt(response.data.result);
-            // Save the current session to localStorage
+    
+            // Save unsaved lesson data in localStorage
             localStorage.setItem(
                 'unsavedLesson',
                 JSON.stringify({
@@ -133,61 +132,90 @@ const HomePage = () => {
                     generatedPrompt: response.data.result,
                 })
             );
-
-            setIsLocked(true); // Lock the form
-        }
+    
+            // Set locked state
+            setIsLocked(true);
+    
+            // Close the loading modal and show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Response Generated',
+                text: 'Feel free to interact with the generated content!',
+                confirmButtonColor: '#6b46c1',
+            });
         } catch (error) {
             console.error('Error generating prompt:', error);
+    
+            // Show error modal
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Please try again',
+                text: 'Failed to generate the prompt. Please try again.',
                 confirmButtonColor: '#6b46c1',
             });
+        } finally {
+            setIsGenerating(false); // Reset loading state
         }
     };
-
+    
     const handleMarkAsComplete = async () => {
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+            console.error('User ID not found in localStorage');
+            return;
+        }
+    
         try {
-            const userId = localStorage.getItem('userId');
-            if (!userId) {
-                console.error('User ID not found in localStorage');
-                return;
-            }
-
-            await axiosInstance.post(`/createSession/${userId}`, {
-                experience: formData.experience,
-                language: formData.preferredLang,
-                expertise: formData.learningGoals,
+            // Show a loading animation
+            Swal.fire({
+                title: 'Marking Lesson as Complete...',
+                text: 'Please wait while the lesson is being processed.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading(); // Start the loading animation
+                },
             });
-            const response = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
+    
+            // Call the AI endpoint to process the lesson and mark it as complete
+            const aiResponse = await axiosInstance.post(`/processUserDataWithGeminiAI/${userId}`, {
                 experience: formData.experience,
                 preferredLanguages: formData.preferredLang,
                 learningGoals: formData.learningGoals,
-                prompt: formData.prompt, 
-                completedLesson: true,
+                prompt: formData.prompt,
+                completedLesson: true, // Ensure completedLesson is set to true
             });
-            console.log("reponse", response.data.result);
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Lesson Completed',
-                text: 'Great job! Your lesson has been marked as complete.',
-                confirmButtonColor: '#6b46c1',
-            });
-
-            // Clear form and localStorage
-            setFormData({
-                experience: '',
-                preferredLang: '',
-                learningGoals: '',
-                prompt: '',
-            });
-            setGeneratedPrompt('');
-            setIsLocked(false);
-            localStorage.removeItem('unsavedLesson');
+    
+            if (aiResponse.status === 200) {
+                // Proceed with marking the session as complete
+                await axiosInstance.post(`/createSession/${userId}`, {
+                    experience: formData.experience,
+                    language: formData.preferredLang,
+                    expertise: formData.learningGoals,
+                });
+    
+                // Close the loading animation and show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Lesson Completed',
+                    text: 'Great job! Your lesson has been marked as complete.',
+                    confirmButtonColor: '#6b46c1',
+                });
+    
+                // Reset the form and remove the unsaved lesson data
+                setFormData({
+                    experience: '',
+                    preferredLang: '',
+                    learningGoals: '',
+                    prompt: '',
+                });
+                setGeneratedPrompt('');
+                setIsLocked(false);
+                localStorage.removeItem('unsavedLesson');
+            }
         } catch (error) {
             console.error('Error marking lesson as complete:', error);
+    
+            // Close the loading animation and show error message
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -196,6 +224,7 @@ const HomePage = () => {
             });
         }
     };
+    
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -235,6 +264,7 @@ const HomePage = () => {
                     <div>
                         <h2 className="text-lg font-bold mb-4">Hello {userName}, Start Learning Coding</h2>
                         <form>
+                            {/* Input fields */}
                             <div className="mb-4">
                                 <label className="block mb-2 text-sm">Experience Level*</label>
                                 <select
@@ -290,7 +320,6 @@ const HomePage = () => {
                                     rows="2"
                                     className="w-full px-3 py-2 rounded bg-gray-700 text-white focus:outline-none"
                                     placeholder="Add any additional information..."
-                                    disabled={isLocked}
                                 ></textarea>
                             </div>
                         </form>
@@ -298,12 +327,12 @@ const HomePage = () => {
                     <div className="flex flex-col gap-4">
                         <button
                             className={`bg-purple-500 px-3 py-2 rounded-lg ${
-                                generatedPrompt ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700'
+                                isGenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-700'
                             }`}
                             onClick={handleGeneratePrompt}
-                            disabled={!!generatedPrompt} // Disable the button if generatedPrompt has a value
+                            disabled={isGenerating} // Disable only during generation
                         >
-                            Generate Prompt
+                            {isGenerating ? 'Generating...' : 'Generate Prompt'}
                         </button>
                         <button
                             className="bg-blue-500 px-3 py-2 rounded-lg hover:bg-blue-700"
@@ -314,15 +343,14 @@ const HomePage = () => {
                     </div>
                 </div>
 
-                {/* Right Section */}
                 <div
                     className="flex-1 bg-purple-300 p-4 rounded-lg shadow-lg"
-                    style={{ height: 'calc(100vh)' }} // Adjust height based on your navbar height
+                    style={{ height: 'calc(100vh)' }}
                 >
-                    <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">AI-Generated Prompt</h2>
+                    <h2 className="text-lg font-bold text-gray-800 mb-4 text-center">AI-Generated Response</h2>
                     <div
                         className="h-full overflow-y-auto p-4 bg-purple-200 rounded-lg"
-                        style={{ maxHeight: 'calc(100vh - 100px)' }} // Adjust for title and padding
+                        style={{ maxHeight: 'calc(100vh - 100px)' }}
                     >
                         {generatedPrompt ? (
                             <ReactMarkdown className="prose prose-purple max-w-none">{generatedPrompt}</ReactMarkdown>
